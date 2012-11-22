@@ -1,2 +1,12 @@
-apple:яблоко
-girl:девушка
+spatial:пространственный
+obscure:затемнять
+clutter:беспорядок
+jamming:заклинивание
+particularly:особенно
+preliminary:предварительный
+specular:зеркальный
+quantitative:количественный
+assessment:оценка
+steer:управлять
+foe:враг
+thoughts:мысли

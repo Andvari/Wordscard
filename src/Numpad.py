@@ -33,7 +33,7 @@ class Numpad(gtk.Window):
         self.set_title("Search...")
         
         self.tb = gtk.TextBuffer()
-        self.tb.set_text("Type text to search...")
+        self.tb.set_text("Set timeout")
         
         self.set_default_size(MULT*160, MULT*90)
 

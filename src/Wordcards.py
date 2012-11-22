@@ -12,16 +12,15 @@ import gtk
 import appindicator
 import pynotify
 import threading
-import random
-import re
 import Numpad
 import Dictionary
+import gobject
 
 class Wordcards():
 
     def __init__(self):
         self.state = "Stopped"
-        self.interval = 120
+        self.interval = 20
         
         self.homedir = os.environ['HOME']
         
@@ -84,9 +83,8 @@ class Wordcards():
     def on_timer(self):
         if (self.state == "Runned"):
             if (self.dict.get_size() > 0):
-                i = random.randint(0, self.dict.get_size()-1)
                 term = self.dict.get_random_word()
-                translation = self.dict.get_translation(self.term) 
+                translation = self.dict.get_translation(term) 
                 n = pynotify.Notification (term, translation, "Null")
                 n.show ()
                     
@@ -115,12 +113,14 @@ class Wordcards():
     def on_quit(self, e):
         gtk.main_quit()
         
-    def on_z_signal(self, e):
-        self.interval = self.kb.get_text_to_find()
-        if(self.interval > 3600):
-            self.interval = 3600
-        self.kb.hide()
-        self.makeMenu()        
+    def on_z_signal(self, e, state):
+        if (state == True):
+            self.interval = self.kb.get_text_to_find()
+            if(self.interval > 3600):
+                self.interval = 3600
+                
+        self.kb.hide_all()
+        self.makeMenu()
         
 wc = Wordcards()
 gtk.gdk.threads_init()

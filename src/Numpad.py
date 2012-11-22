@@ -6,10 +6,10 @@ import gobject
 
 MULT = 1
 
-KB_COLS = 12
+KB_COLS = 13
 KB_ROWS = 1
 
-buttons_ru = [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "BACKSP", "GO"] 
+buttons_ru = [ "ESC", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "BACKSP", "GO"] 
 
 
 class Numpad(gtk.Window):
@@ -23,14 +23,15 @@ class Numpad(gtk.Window):
         pangoFont = pango.FontDescription("Tahoma 24.2")
 
         try:
-            gobject.signal_new("z_signal", self, gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, ())
+            gobject.signal_new("z_signal", self, gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE, (gobject.TYPE_BOOLEAN, ))
         except:
             pass
 
+        self.set_decorated(False)
         
         self.modify_font(pangoFont)
         
-        self.set_title("Search...")
+        self.set_title("Set timeout")
         
         self.tb = gtk.TextBuffer()
         self.tb.set_text("Set timeout")
@@ -57,7 +58,7 @@ class Numpad(gtk.Window):
 
         self.add(self.vbox)
         self.set_position(gtk.WIN_POS_CENTER)
-
+        
     def on_click(self, e, prm):
         if(self.flag == 0):
             self.tb.delete(self.tb.get_start_iter(), self.tb.get_end_iter())
@@ -69,15 +70,20 @@ class Numpad(gtk.Window):
             self.tb.delete(start, end)
         elif (buttons_ru[prm] == "GO"):
             self.flag = 0
-            self.emit("z_signal")
+            self.emit("z_signal", True)
+        elif (buttons_ru[prm] == "ESC"):
+            self.flag = 0
+            self.emit("z_signal", False)
         else:
             self.tb.insert(self.tb.get_end_iter(), buttons_ru[prm])
             self.flag = 1
             
     def get_text_to_find(self):
         self.text = self.tb.get_text(self.tb.get_start_iter(), self.tb.get_end_iter())
-        return int(self.text)
-    
-    def on_destroy(self, e):
-        self.hide()
-        
+        try:
+            timeout = int(self.text)
+        except:
+            timeout = 120
+
+        return timeout
+   

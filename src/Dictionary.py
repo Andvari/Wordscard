@@ -29,7 +29,6 @@ class Dictionary():
         
             
         self.update()
-        
     
     def add_term(self, term, translation):
         self.words[self.size] = term
@@ -48,10 +47,11 @@ class Dictionary():
             page = dict_file.read()
             save_file = open(self.homedir + "/.Wordcards" + DICT_FILE, "wb")
             save_file.write(page)
+            
         except:
             dict_file = open(self.homedir + "/.Wordcards" + DICT_FILE, "rb")
+            page = dict_file.read()
             
-        page = dict_file.read()
         dict_file.close()
         
         dct = {}
@@ -59,12 +59,10 @@ class Dictionary():
             
         i=0
         for line in dct:
-            self.words[i]                   = line [  : line.find(":") - 1]
-            self.translations[self.word[i]] = line [ line.find(":") + 1 : ].encode("utf-8")
+            self.words[i]                    = line [  : line.find(":") ]
+            self.translations[self.words[i]] = line [ line.find(":") + 1 : ].encode("utf-8")
             i+=1
         self.size = i
-        
-        
     
     def get_size(self):
         return self.size

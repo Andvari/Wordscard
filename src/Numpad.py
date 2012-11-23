@@ -81,9 +81,9 @@ class Numpad(gtk.Window):
     def get_text_to_find(self):
         self.text = self.tb.get_text(self.tb.get_start_iter(), self.tb.get_end_iter())
         try:
-            timeout = int(self.text)
+            int(self.text)
         except:
-            timeout = 120
+            self.text = '120'
 
-        return timeout
+        return self.text
    

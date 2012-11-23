@@ -7,16 +7,14 @@ Created on Nov 22, 2012
 '''
 
 import os
-import re
 import random
 
 DICT_FILE     = "/dictionary.txt"
 
 class Dictionary():
     def __init__(self):
-        self.words          = {}
-        self.translations   = {}
-        self.size           = 0
+        self.dict = {}
+        self.size = 0
 
         self.homedir = os.environ['HOME']
         
@@ -31,8 +29,10 @@ class Dictionary():
         self.update()
     
     def add_term(self, term, translation):
-        self.words[self.size] = term
-        self.translations[term] = translation
+        try:
+            self.dict[term]
+        except:
+            self.dict[term] = translation
     
     def remove_item(self, term):
         pass
@@ -47,30 +47,30 @@ class Dictionary():
             page = dict_file.read()
             save_file = open(self.homedir + "/.Wordcards" + DICT_FILE, "wb")
             save_file.write(page)
-            
+            save_file.close()
+            dict_file.close()
         except:
-            dict_file = open(self.homedir + "/.Wordcards" + DICT_FILE, "rb")
-            page = dict_file.read()
+            pass
             
+        dict_file = open(self.homedir + "/.Wordcards" + DICT_FILE, "r")
+
+        for line in dict_file:
+            line = line.replace("\n", "")
+            term = line[ : line.find(":")]
+            translate = line[ line.find(":")+1 : ]
+            self.dict[term] = translate
+        self.size = len(self.dict.keys())
+        
         dict_file.close()
         
-        dct = {}
-        dct = re.compile("(.*?)\n").findall(page)
-            
-        i=0
-        for line in dct:
-            self.words[i]                    = line [  : line.find(":") ]
-            self.translations[self.words[i]] = line [ line.find(":") + 1 : ].encode("utf-8")
-            i+=1
-        self.size = i
     
     def get_size(self):
         return self.size
     
     def get_random_word(self):
-        return self.words[random.randint(0, self.size-1)]
+        return self.dict.keys()[random.randint(0, self.size-1)]
     
     def get_translation(self, term):
-        return self.translations[term]
+        return self.dict[term]
          
     

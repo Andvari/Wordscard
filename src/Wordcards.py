@@ -14,13 +14,25 @@ import pynotify
 import threading
 import Numpad
 import Dictionary
-import gobject
+import dbus.service
+from dbus.mainloop.glib import DBusGMainLoop
 
-class Wordcards():
-
+class Wordcards(dbus.service.Object):
     def __init__(self):
+        try:
+            DBusGMainLoop(set_as_default=True)
+            dbus.SessionBus().get_object('home.nemo.Wordcards', '/home/nemo/Wordcards')
+            self.status = 1
+            print "Application already works"
+            return
+        except:
+            self.status = 0
+        
+        DBusGMainLoop(set_as_default=True)
+        dbus.service.Object.__init__(self, dbus.service.BusName('home.nemo.Wordcards', dbus.SessionBus()), '/home/nemo/Wordcards')
+
         self.state = "Stopped"
-        self.interval = 20
+        self.config = {}
         
         self.homedir = os.environ['HOME']
         
@@ -28,6 +40,11 @@ class Wordcards():
             os.mkdir(self.homedir + "/.Wordcards")
         except:
             pass
+        
+        cfg = open(self.homedir + "/.Wordcards/config", "a+")
+        cfg.close()
+        
+        self.read_cfg()
         
         self.ind = appindicator.Indicator("hello world client", "", appindicator.CATEGORY_APPLICATION_STATUS)
         self.ind.set_status (appindicator.STATUS_ACTIVE)
@@ -54,11 +71,11 @@ class Wordcards():
         self.menu.append(item)
         item.show()
         
-        item_interval = gtk.MenuItem()
-        item_interval.add(gtk.Label("Set interval  [ " + str(self.interval) + " ]"))
-        self.menu.append(item_interval)
-        item_interval.show()
-        item_interval.connect("activate", self.on_interval)
+        item_timeout = gtk.MenuItem()
+        item_timeout.add(gtk.Label("Set timeout  [ " + self.config['timeout'] + "s ]"))
+        self.menu.append(item_timeout)
+        item_timeout.show()
+        item_timeout.connect("activate", self.on_timeout)
 
         item_edit = gtk.MenuItem()
         item_edit.add(gtk.Label("Update dictionary"))
@@ -88,43 +105,67 @@ class Wordcards():
                 n = pynotify.Notification (term, translation, "Null")
                 n.show ()
                     
-        self.tmr = threading.Timer(self.interval, self.on_timer)
+        self.tmr = threading.Timer(int(self.config['timeout']), self.on_timer)
         self.tmr.start()
                         
     def on_runstop(self, e):
         if (self.state == "Runned"):
+            self.tmr.cancel()
             self.state = "Stopped"
             self.ind.set_icon("word_off")
         else:
             self.state = "Runned"
             self.ind.set_icon("word_on")
-            self.tmr = threading.Timer(self.interval, self.on_timer)
+            self.tmr = threading.Timer(int(self.config['timeout']), self.on_timer)
             self.tmr.start()
-                        
-            
         self.makeMenu()
 
     def on_update(self, e):
         self.dict.update()
 
-    def on_interval(self, e):
+    def on_timeout(self, e):
         self.kb.show_all()
 
     def on_quit(self, e):
+        self.write_cfg()
         gtk.main_quit()
         
     def on_z_signal(self, e, state):
         if (state == True):
-            self.interval = self.kb.get_text_to_find()
-            if(self.interval > 3600):
-                self.interval = 3600
+            self.config['timeout'] = self.kb.get_text_to_find()
+            if(self.config['timeout'] > '3600'):
+                self.config['timeout'] = '3600'
                 
         self.kb.hide_all()
         self.makeMenu()
         
+        
+    def read_cfg(self):
+        cfg = open(self.homedir + "/.Wordcards/config", "r")
+        for line in cfg:
+            line = line.replace("\n", "")
+            name = line[ : line.find("=")]
+            value = line[ line.find("=")+1 : ]
+            self.config[name] = value
+        
+        try:
+            int(self.config['timeout'])
+        except:
+            self.config['timeout'] = '120'
+            
+        cfg.close()
+        
+    def write_cfg(self):
+        cfg = open(self.homedir + "/.Wordcards/config", "w")
+        for line in self.config:
+            cfg.write(line + "=" + self.config[line] + "\n")
+            
+        cfg.close()
+        
 wc = Wordcards()
-gtk.gdk.threads_init()
-gtk.main()
+if (wc.status == 0):
+    gtk.gdk.threads_init()
+    gtk.main()
     
 os._exit(0)
 

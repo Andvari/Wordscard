@@ -85,5 +85,6 @@ class Numpad(gtk.Window):
         except:
             self.text = '120'
 
+        print self.text
         return self.text
    

@@ -51,7 +51,14 @@ class Wordcards(dbus.service.Object):
         self.ind = appindicator.Indicator("hello world client", "", appindicator.CATEGORY_APPLICATION_STATUS)
         self.ind.set_status (appindicator.STATUS_ACTIVE)
         
-        self.ind.set_icon_theme_path("home/nemo/workspace/Wordcards/src/images")
+        try:
+            open(self.homedir + "/.Wordcards/images/word_off.png",  "r")
+            open(self.homedir + "/.Wordcards/images/word_on.png", "r")
+        except:
+            print "Icons not found"
+            os._exit(False)
+            
+        self.ind.set_icon_theme_path(self.homedir + "/.Wordcards/images")
         self.ind.set_icon("word_off")
 
         self.dict = Dictionary.Dictionary()
@@ -142,7 +149,7 @@ class Wordcards(dbus.service.Object):
     def on_z_signal(self, e, state):
         if (state == True):
             self.config['timeout'] = self.kb.get_text_to_find()
-            if(self.config['timeout'] > '3600'):
+            if(int(self.config['timeout']) > 3600):
                 self.config['timeout'] = '3600'
                 
         self.kb.hide_all()

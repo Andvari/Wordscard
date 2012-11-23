@@ -81,7 +81,7 @@ class Numpad(gtk.Window):
     def get_text_to_find(self):
         self.text = self.tb.get_text(self.tb.get_start_iter(), self.tb.get_end_iter())
         try:
-            int(self.text)
+            self.text = str(int(self.text))
         except:
             self.text = '120'
 

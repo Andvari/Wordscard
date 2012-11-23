@@ -16,6 +16,7 @@ import Numpad
 import Dictionary
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
+from datetime import datetime
 
 class Wordcards(dbus.service.Object):
     def __init__(self):
@@ -66,6 +67,10 @@ class Wordcards(dbus.service.Object):
         self.kb.connect("z_signal", self.on_z_signal)
 
         self.makeMenu()
+        
+        self.log = open(self.homedir + "/.Wordcards/log.txt", "w")
+        
+        self.log_write("LOG STARTED")
             
     def makeMenu(self):
         self.menu = gtk.Menu()
@@ -107,6 +112,7 @@ class Wordcards(dbus.service.Object):
         pynotify.init("Null")
         
     def on_timer(self):
+        self.log_write("on_timer")
         if (self.state == "Runned"):
             if (self.dict.get_size() > 0):
                 term = self.dict.get_random_word()
@@ -115,11 +121,18 @@ class Wordcards(dbus.service.Object):
                     n = pynotify.Notification (term, translation, "Null")
                 else:
                     n = pynotify.Notification (term, "", "Null")
-                n.show ()
+                n.show()
                 self.counter += 1
-                if(self.counter > self.dict.get_size()):
-                    self.is_learning = 1 - self.learning
+                #if(self.counter > self.dict.get_size()):
+                if(self.counter > 5):
+                    self.is_learning = 1 - self.is_learning
                     self.counter = 0
+                else:
+                    pass
+            else:
+                pass
+        else:
+            pass
                     
         self.tmr = threading.Timer(int(self.config['timeout']), self.on_timer)
         self.tmr.start()
@@ -129,21 +142,27 @@ class Wordcards(dbus.service.Object):
             self.tmr.cancel()
             self.state = "Stopped"
             self.ind.set_icon("word_off")
+            self.log_write("Stopped")
         else:
             self.state = "Runned"
             self.ind.set_icon("word_on")
             self.tmr = threading.Timer(int(self.config['timeout']), self.on_timer)
             self.tmr.start()
+            self.log_write("Runned")
         self.makeMenu()
 
     def on_update(self, e):
         self.dict.update()
+        self.log_write("Dictionary updated")
 
     def on_timeout(self, e):
         self.kb.show_all()
+        self.log_write("Request setting timeout")
 
     def on_quit(self, e):
         self.write_cfg()
+        self.log_write("Quit")
+        self.log.close()
         gtk.main_quit()
         
     def on_z_signal(self, e, state):
@@ -177,6 +196,11 @@ class Wordcards(dbus.service.Object):
             cfg.write(line + "=" + self.config[line] + "\n")
             
         cfg.close()
+        
+    def log_write(self, line):
+        pass
+        #self.log.write(str(datetime.now()))
+        #self.log.write(" " + line + "\n")
         
 wc = Wordcards()
 if (wc.status == 0):

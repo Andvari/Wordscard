@@ -31,6 +31,8 @@ class Wordcards(dbus.service.Object):
         DBusGMainLoop(set_as_default=True)
         dbus.service.Object.__init__(self, dbus.service.BusName('home.nemo.Wordcards', dbus.SessionBus()), '/home/nemo/Wordcards')
 
+        self.counter = 0
+        self.is_learning = 0
         self.state = "Stopped"
         self.config = {}
         
@@ -101,9 +103,16 @@ class Wordcards(dbus.service.Object):
         if (self.state == "Runned"):
             if (self.dict.get_size() > 0):
                 term = self.dict.get_random_word()
-                translation = self.dict.get_translation(term) 
-                n = pynotify.Notification (term, translation, "Null")
+                translation = self.dict.get_translation(term)
+                if (self.is_learning == 0): 
+                    n = pynotify.Notification (term, translation, "Null")
+                else:
+                    n = pynotify.Notification (term, "", "Null")
                 n.show ()
+                self.counter += 1
+                if(self.counter > self.dict.get_size()):
+                    self.is_learning = 1 - self.learning
+                    self.counter = 0
                     
         self.tmr = threading.Timer(int(self.config['timeout']), self.on_timer)
         self.tmr.start()

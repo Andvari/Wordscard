@@ -149,6 +149,8 @@ class Wordcards(dbus.service.Object):
             self.tmr = threading.Timer(int(self.config['timeout']), self.on_timer)
             self.tmr.start()
             self.log_write("Runned")
+            
+        self.menu.destroy()
         self.makeMenu()
 
     def on_update(self, e):

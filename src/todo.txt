@@ -1,0 +1,9 @@
+1. Show full dictionary
+2. Add a term
+3. Delete a term
+4. Setting a global path
+5. Switch through learning modes
+6. Show dictionary size
+7. Work with clipboard
+8. More greatful icons
+9. 

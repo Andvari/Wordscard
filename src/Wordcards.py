@@ -91,6 +91,16 @@ class Wordcards(dbus.service.Object):
         item_timeout.show()
         item_timeout.connect("activate", self.on_timeout)
 
+        item_mode = gtk.MenuItem()
+	if self.is_learning:
+            item_mode.add(gtk.Label("Listening mode"))
+        else:
+            item_mode.add(gtk.Label("Learning mode"))
+
+        self.menu.append(item_mode)
+        item_mode.show()
+        item_mode.connect("activate", self.on_mode)
+
         item_edit = gtk.MenuItem()
         item_edit.add(gtk.Label("Update dictionary"))
         self.menu.append(item_edit)
@@ -128,7 +138,7 @@ class Wordcards(dbus.service.Object):
                 self.counter += 1
                 #if(self.counter > self.dict.get_size()):
                 if(self.counter > 5):
-                    self.is_learning = 1 - self.is_learning
+                    #self.is_learning = 1 - self.is_learning
                     self.counter = 0
                 else:
                     pass
@@ -153,6 +163,11 @@ class Wordcards(dbus.service.Object):
             self.tmr.start()
             self.log_write("Runned")
             
+        self.menu.destroy()
+        self.makeMenu()
+
+    def on_mode(self, e):
+        self.is_learning = 1 - self.is_learning
         self.menu.destroy()
         self.makeMenu()
 

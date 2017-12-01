@@ -119,8 +119,11 @@ class Wordcards(dbus.service.Object):
                 translation = self.dict.get_translation(term)
                 if (self.is_learning == 0): 
                     n = pynotify.Notification (term, translation, "Null")
+		    os.system("echo " + term + "| festival --tts")
+		    os.system("echo " + translation + "| festival --tts --language russian")
                 else:
                     n = pynotify.Notification (term, "", "Null")
+		    os.system("echo " + term + "| festival --tts")
                 n.show()
                 self.counter += 1
                 #if(self.counter > self.dict.get_size()):

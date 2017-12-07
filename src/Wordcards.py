@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-'''
+"""
 Created on Nov 20, 2012
 
 @author: nemo
-'''
+"""
 
 import os
 import gtk
@@ -16,67 +16,52 @@ import Numpad
 import Dictionary
 import dbus.service
 from dbus.mainloop.glib import DBusGMainLoop
-from datetime import datetime
+
 
 class Wordcards(dbus.service.Object):
     def __init__(self):
         try:
             DBusGMainLoop(set_as_default=True)
             dbus.SessionBus().get_object('home.nemo.Wordcards', '/home/nemo/Wordcards')
-            self.status = 1
-            print "Application already works"
+            self.status = "Already run"
+            print("Application already run")
             return
         except:
-            self.status = 0
-        
+            self.status = "Stopped"
+
         DBusGMainLoop(set_as_default=True)
         dbus.service.Object.__init__(self, dbus.service.BusName('home.nemo.Wordcards', dbus.SessionBus()), '/home/nemo/Wordcards')
 
-        self.counter = 0
         self.is_learning = 0
-        self.state = "Stopped"
-        self.config = {}
-        
-        self.homedir = os.environ['HOME']
-        
-        try:
-            os.mkdir(self.homedir + "/.Wordcards")
-        except:
-            pass
-        
-        cfg = open(self.homedir + "/.Wordcards/config", "a+")
-        cfg.close()
-        
+        self.config = {'timeout': '120'}
+        self.home_dir = os.environ['PWD']
+        self.menu = gtk.Menu()
+
+        assert os.path.exists(self.home_dir + "/config"), "Wordcards does not properly installed"
+        assert os.path.exists(self.home_dir + "/images/word_on.png"), "Wordcards does not properly installed"
+        assert os.path.exists(self.home_dir + "/images/word_off.png"), "Wordcards does not properly installed"
+
         self.read_cfg()
-        
+        self.tmr = threading.Timer(int(self.config['timeout']), self.on_timer)
+
         self.ind = appindicator.Indicator("hello world client", "", appindicator.CATEGORY_APPLICATION_STATUS)
-        self.ind.set_status (appindicator.STATUS_ACTIVE)
+        self.ind.set_status(appindicator.STATUS_ACTIVE)
         
-        try:
-            open(self.homedir + "/.Wordcards/images/word_off.png",  "r")
-            open(self.homedir + "/.Wordcards/images/word_on.png", "r")
-        except:
-            print "Icons not found"
-            os._exit(False)
-            
-        self.ind.set_icon_theme_path(self.homedir + "/.Wordcards/images")
+        self.ind.set_icon_theme_path(self.home_dir + "/images")
         self.ind.set_icon("word_off")
 
         self.dict = Dictionary.Dictionary()
         self.kb = Numpad.Numpad()
         self.kb.connect("z_signal", self.on_z_signal)
 
-        self.makeMenu()
-        
-        self.log = open(self.homedir + "/.Wordcards/log.txt", "w")
-        
-        self.log_write("LOG STARTED")
-            
-    def makeMenu(self):
+        self.make_menu()
+
+    def make_menu(self):
+        self.menu.destroy()
         self.menu = gtk.Menu()
-       
+
         item_runstop = gtk.MenuItem()
-        item_runstop.add(gtk.Label(self.state))
+        item_runstop.add(gtk.Label(self.status))
         self.menu.append(item_runstop)
         item_runstop.show()
         item_runstop.connect("activate", self.on_runstop)
@@ -92,7 +77,7 @@ class Wordcards(dbus.service.Object):
         item_timeout.connect("activate", self.on_timeout)
 
         item_mode = gtk.MenuItem()
-	if self.is_learning:
+        if self.is_learning:
             item_mode.add(gtk.Label("Listening mode"))
         else:
             item_mode.add(gtk.Label("Learning mode"))
@@ -103,9 +88,10 @@ class Wordcards(dbus.service.Object):
 
         item_edit = gtk.MenuItem()
         item_edit.add(gtk.Label("Update dictionary"))
+
         self.menu.append(item_edit)
         item_edit.show()
-        item_edit.connect("activate", self.on_update)
+        item_edit.connect("activate", self.dict.update)
 
         item = gtk.SeparatorMenuItem()
         self.menu.append(item)
@@ -122,110 +108,69 @@ class Wordcards(dbus.service.Object):
         pynotify.init("Null")
         
     def on_timer(self):
-        self.log_write("on_timer")
-        if (self.state == "Runned"):
-            if (self.dict.get_size() > 0):
+        if self.status == "Runned":
+            if self.dict:
                 term = self.dict.get_random_word()
-                translation = self.dict.get_translation(term)
-                if (self.is_learning == 0): 
-                    n = pynotify.Notification (term, translation, "Null")
-		    os.system("echo " + term + "| festival --tts")
-		    os.system("echo " + translation + "| festival --tts --language russian")
+                if self.is_learning == 0:
+                    n = pynotify.Notification(term['value'], term['translation'], "Null")
+                    os.system("echo " + term['value'] + "| festival --tts ; sleep 2")
+                    os.system("echo " + term['translation'] + "| festival --tts --language russian ; sleep 1" )
+                    os.system("echo " + term['example'] + "| festival --tts")
                 else:
-                    n = pynotify.Notification (term, "", "Null")
-		    os.system("echo " + term + "| festival --tts")
+                    n = pynotify.Notification (term['value'], "", "Null")
+                    os.system("echo " + term['value'] + "| festival --tts")
                 n.show()
-                self.counter += 1
-                #if(self.counter > self.dict.get_size()):
-                if(self.counter > 5):
-                    #self.is_learning = 1 - self.is_learning
-                    self.counter = 0
-                else:
-                    pass
-            else:
-                pass
-        else:
-            pass
-                    
         self.tmr = threading.Timer(int(self.config['timeout']), self.on_timer)
         self.tmr.start()
-                        
+
     def on_runstop(self, e):
-        if (self.state == "Runned"):
+        if self.status == "Runned":
             self.tmr.cancel()
-            self.state = "Stopped"
+            self.status = "Stopped"
             self.ind.set_icon("word_off")
-            self.log_write("Stopped")
         else:
-            self.state = "Runned"
+            self.status = "Runned"
             self.ind.set_icon("word_on")
-            self.tmr = threading.Timer(int(self.config['timeout']), self.on_timer)
             self.tmr.start()
-            self.log_write("Runned")
-            
-        self.menu.destroy()
-        self.makeMenu()
-
-    def on_mode(self, e):
-        self.is_learning = 1 - self.is_learning
-        self.menu.destroy()
-        self.makeMenu()
-
-    def on_update(self, e):
-        self.dict.update()
-        self.log_write("Dictionary updated")
+        self.make_menu()
 
     def on_timeout(self, e):
         self.kb.show_all()
-        self.log_write("Request setting timeout")
+
+    def on_mode(self, e):
+        self.is_learning = 1 - self.is_learning
+        self.make_menu()
 
     def on_quit(self, e):
         self.write_cfg()
-        self.log_write("Quit")
-        self.log.close()
+        self.tmr.cancel()
         gtk.main_quit()
         
     def on_z_signal(self, e, state):
-        if (state == True):
+        if state:
             self.config['timeout'] = self.kb.get_text_to_find()
-            if(int(self.config['timeout']) > 3600):
+            if int(self.config['timeout']) > 3600:
                 self.config['timeout'] = '3600'
-                
+            self.tmr.cancel()
+            self.tmr = threading.Timer(int(self.config['timeout']), self.on_timer)
         self.kb.hide_all()
-        self.makeMenu()
-        
+        self.make_menu()
         
     def read_cfg(self):
-        cfg = open(self.homedir + "/.Wordcards/config", "r")
-        for line in cfg:
-            line = line.replace("\n", "")
-            name = line[ : line.find("=")]
-            value = line[ line.find("=")+1 : ]
-            self.config[name] = value
-        
-        try:
-            int(self.config['timeout'])
-        except:
-            self.config['timeout'] = '120'
-            
-        cfg.close()
-        
+        with open(self.home_dir + "/config", "r") as cfg:
+            for line in cfg:
+                line = line.replace("\n", "")
+                name = line[: line.find("=")]
+                value = line[line.find("=")+1:]
+                self.config[name] = value
+
     def write_cfg(self):
-        cfg = open(self.homedir + "/.Wordcards/config", "w")
-        for line in self.config:
-            cfg.write(line + "=" + self.config[line] + "\n")
-            
-        cfg.close()
-        
-    def log_write(self, line):
-        pass
-        #self.log.write(str(datetime.now()))
-        #self.log.write(" " + line + "\n")
-        
-wc = Wordcards()
-if (wc.status == 0):
+        with open(self.home_dir + "/config", "w") as cfg:
+            for line in self.config:
+                cfg.write(line + "=" + self.config[line] + "\n")
+
+if Wordcards().status != "Already run":
     gtk.gdk.threads_init()
     gtk.main()
-    
-os._exit(0)
 
+exit(0)

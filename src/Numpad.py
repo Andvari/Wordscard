@@ -60,18 +60,18 @@ class Numpad(gtk.Window):
         self.set_position(gtk.WIN_POS_CENTER)
         
     def on_click(self, e, prm):
-        if(self.flag == 0):
+        if self.flag == 0:
             self.tb.delete(self.tb.get_start_iter(), self.tb.get_end_iter())
         
-        if (buttons_ru[prm] == "BACKSP"):
+        if buttons_ru[prm] == "BACKSP":
             start = self.tb.get_end_iter()
             end   = self.tb.get_end_iter()
             start.backward_char()
             self.tb.delete(start, end)
-        elif (buttons_ru[prm] == "GO"):
+        elif buttons_ru[prm] == "GO":
             self.flag = 0
             self.emit("z_signal", True)
-        elif (buttons_ru[prm] == "ESC"):
+        elif buttons_ru[prm] == "ESC":
             self.flag = 0
             self.emit("z_signal", False)
         else:

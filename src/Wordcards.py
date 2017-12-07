@@ -113,12 +113,16 @@ class Wordcards(dbus.service.Object):
                 term = self.dict.get_random_word()
                 if self.is_learning == 0:
                     n = pynotify.Notification(term['value'], term['translation'], "Null")
-                    os.system("echo " + term['value'] + "| festival --tts ; sleep 2")
+                    #os.system("echo " + term['value'] + "| festival --tts ; sleep 2")
+                    os.system("spd-say -r -70 \"" + term['value'] + "\" ; sleep 2")
                     os.system("echo " + term['translation'] + "| festival --tts --language russian ; sleep 1" )
-                    os.system("echo " + term['example'] + "| festival --tts")
+                    #os.system("echo " + term['example'] + "| festival --tts")
+                    if len(term['example']) > 0:
+                        os.system("spd-say -r -70 \"" + term['example'] + "\"")
                 else:
                     n = pynotify.Notification (term['value'], "", "Null")
-                    os.system("echo " + term['value'] + "| festival --tts")
+                    #os.system("echo " + term['value'] + "| festival --tts")
+                    os.system("spd-say -r -70\"" + term['value'] + "\"")
                 n.show()
         self.tmr = threading.Timer(int(self.config['timeout']), self.on_timer)
         self.tmr.start()
